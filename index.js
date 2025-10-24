@@ -42,7 +42,7 @@ async function main() {
     
     const response = await axios({ method: 'GET', url, responseType: 'stream' })
 
-    const folderId = '1R_h7XyKL-3mVeG8ze3zXeo-3fQq0ptB0'
+    const folderId = '1SRMLy02hkIA0GcXFJyiRwFmH3091Ec3V'
     
     try {
       const uploaded = await drive.files.create({
