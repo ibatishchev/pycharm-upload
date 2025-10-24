@@ -29,39 +29,51 @@ async function main() {
   const latest = versionInfo.data['PCP'][0]
   const version = latest.version
 
+  const folderId = '1NoLMKCNle-daq0stTxYKuEi8J_YsPhhE' // ID папки в общем диске
+  const sharedDriveId = '0AM7kZkCzbi7xUk9PVA' //  ID общего диска 
+
   for (const [platform, { key, ext, mime }] of Object.entries(platforms)) {
     const info = latest.downloads[key]
     if (!info || !info.link) continue
 
     const url = info.link
-    
+
     const now = new Date()
-    const date = now.toISOString().split('T')[0] // YYYY-MM-DD
-    const time = now.toTimeString().slice(0, 8).replace(/:/g, '-') // HH-MM-SS
+    const date = now.toISOString().split('T')[0]
+    const time = now.toTimeString().slice(0, 8).replace(/:/g, '-')
     const filename = `pycharm-professional-${version}-${platform}-${date}_${time}${ext}`
-    
+
     const response = await axios({ method: 'GET', url, responseType: 'stream' })
 
-    const folderId = '1SRMLy02hkIA0GcXFJyiRwFmH3091Ec3V'
-    
     try {
       const uploaded = await drive.files.create({
-        requestBody: { name: filename, parents: [folderId] },
+        requestBody: {
+          name: filename,
+          parents: [folderId],
+        },
         media: { mimeType: mime, body: response.data },
+        supportsAllDrives: true,
       })
 
       console.log(`✅ Загружено: ${filename}`)
 
-      // Удаление старых версий для этой платформы
+      // Удаление старых версий
       const { data } = await drive.files.list({
         q: `'${folderId}' in parents and name contains 'pycharm-professional-' and name contains '${platform}' and name != '${filename}' and trashed = false`,
         fields: 'files(id, name)',
         pageSize: 10,
+        driveId: sharedDriveId,
+        includeItemsFromAllDrives: true,
+        supportsAllDrives: true,
+        corpora: 'drive',
       })
 
       const oldFiles = data.files || []
       for (const file of oldFiles) {
-        await drive.files.delete({ fileId: file.id })
+        await drive.files.delete({
+          fileId: file.id,
+          supportsAllDrives: true,
+        })
         console.log(`🗑️ Удалено: ${file.name}`)
       }
     } catch (err) {
